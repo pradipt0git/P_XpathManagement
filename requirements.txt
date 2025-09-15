@@ -1,0 +1,6 @@
+flask
+selenium
+psutil
+keyboard
+webdriver-manager
+pyautogui

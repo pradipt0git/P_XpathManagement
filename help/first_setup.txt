@@ -1,0 +1,40 @@
+# First Time Setup Instructions
+
+Follow these steps to set up the project for the first time:
+
+1. Clone the Repository
+   - Download or clone the project from your source control (e.g., GitHub).
+
+2. Open a Command Prompt
+   - Navigate to the project folder in Windows Explorer.
+   - Right-click and select "Open in Terminal" or "Open Command Prompt Here".
+
+3. Run the Setup Script
+   - Execute the following command to create a virtual environment and install all required packages:
+
+     ```
+     first_setup_venv.bat
+     ```
+   - This will automatically create a `.venv` folder and install all dependencies from `requirements.txt`.
+
+4. Activate the Virtual Environment
+   - After setup, activate the virtual environment with:
+
+     ```
+     .venv\Scripts\activate.bat
+     ```
+   - You should see `(.venv)` at the beginning of your command prompt line.
+
+5. Run the Automation Framework
+   - To start the framework, run:
+
+     ```
+     python main.py
+     ```
+
+---
+
+Note:
+- Always activate the virtual environment before running the project.
+- If you add new packages to `requirements.txt`, re-run the setup script or use `pip install -r requirements.txt` inside the activated venv.
+- For any issues, check the `Logs` folder for error details.

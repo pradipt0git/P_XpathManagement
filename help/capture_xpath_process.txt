@@ -1,0 +1,37 @@
+# How to Capture XPaths Using capture_xpath.py
+
+1. Set the Default URL
+   - The script will open the following URL by default:
+     
+     https://www.google.com
+   - To change the URL, edit the `default_url` variable at the top of `capture_xpath.py`.
+
+2. Run the Capture Script
+   - Open a terminal in your project directory.
+   - Activate your virtual environment if not already active.
+   - Run the script:
+     
+     ```
+     python modules/capture_xpath.py
+     ```
+
+3. Capture XPaths
+   - The browser will open.
+   - Press `F9` to enable capture mode.
+   - Click on any element in the browser to capture its details and XPaths.
+   - Press `F9` again to disable capture mode.
+   - Repeat as needed. Press `Ctrl+C` in the terminal to exit.
+
+4. Check Captured XPaths
+   - All captured selectors are saved in the `captured_xpaths` folder in your project root.
+   - You will find:
+     - `element_selectors.csv` (for quick reference)
+     - `element_selectors.json` (with full details)
+
+5. Stop 
+   - In terminal press Ctrl+C
+---
+
+Tip:
+- You can open any URL by changing the `default_url` variable before running the script.
+- The CSV file is useful for copying XPaths into your automation data sheets.

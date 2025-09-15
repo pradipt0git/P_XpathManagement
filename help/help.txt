@@ -1,0 +1,53 @@
+# Development and Execution Guide for Automate Automation Project
+
+## Prerequisites
+1. Install Python 3.11 or higher.
+2. Install the required Python packages:
+   ```
+   pip install -r requirements.txt
+   ```
+3. Ensure `PyInstaller` is installed for building the executable:
+   ```
+   pip install pyinstaller
+   ```
+
+## Project Structure
+- `main.py`: Entry point of the application.
+- `config/`: Contains configuration files like `html_template.html` and `testcase_template.xlsx`.
+- `custom_actions/`: Contains custom action scripts.
+- `Logs/`: Stores execution logs.
+- `Reports/`: Stores generated reports and screenshots.
+- `modules/`: Contains supporting modules like `reporting` and `selenium_actions`.
+
+## Running the Project
+1. To execute the project directly:
+   ```
+   python main.py
+   ```
+2. Ensure the `config` folder and its contents are present in the working directory.
+
+## Building the Executable
+1. Ensure the `AutomateAutomation.spec` file is correctly configured to include the `config` and `custom_actions` folders.
+2. Build the executable using PyInstaller:
+   ```
+   pyinstaller --clean --noconfirm AutomateAutomation.spec
+   ```
+3. The built executable will be located in the `dist/` folder.
+
+## Post-Build Execution
+1. After building the executable, ensure the following folders are present in the same directory as the `.exe` file:
+   - `config/`
+   - `Logs/`
+   - `Reports/`
+2. The `config` folder should contain:
+   - `html_template.html`
+   - `testcase_template.xlsx`
+
+## Notes
+- The `Logs` and `Reports` folders will be automatically created during execution if they do not exist.
+- Ensure all dependencies in `requirements.txt` are installed before running or building the project.
+- For custom actions, add your scripts to the `custom_actions/` folder and ensure they are imported dynamically in `main.py`.
+
+## Troubleshooting
+- If the `config` folder is missing, the application will raise an error. Ensure it is present in the working directory.
+- If the executable does not run as expected, check the logs in the `Logs/` folder for detailed error messages.

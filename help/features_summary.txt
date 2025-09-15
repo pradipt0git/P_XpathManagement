@@ -1,0 +1,57 @@
+# Features of the Selenium Python Keyword-Based Automation Framework
+
+1. **Keyword-Driven Test Execution**
+   - Executes test steps based on keywords (actions) defined in test data.
+   - Each step is processed by mapping the action keyword to a Selenium or custom function.
+
+2. **Custom Actions Support**
+   - Allows users to define and use custom actions by prefixing with 'custom-'.
+   - Custom actions are imported from the `customization/custom_actions.py` module.
+
+3. **Selenium Actions Abstraction**
+   - Common Selenium operations are abstracted in the `SeleniumActions` class (e.g., open URL, input text, click element, assert value, check visibility, scroll, clear text).
+
+4. **Robust Reporting**
+   - Uses the `RobustReporting` class for logging info and errors.
+   - Logs each step's result, including status and error messages, to both console and a log file.
+   - Execution logs are written to `execution_log.txt` in the current report folder.
+
+5. **Screenshot Capture**
+   - Automatically captures screenshots on step failure or optionally on step success.
+   - Screenshots are saved in a `Screenshots` subfolder within the report folder.
+
+6. **Error Handling**
+   - Catches and logs exceptions during step execution.
+   - Provides detailed error messages and stack traces in case of failures.
+
+7. **Step Result Structuring**
+   - Each step returns a structured dictionary with testcase name, dataset number, screen, field, action, xpath, data, status, error message, and screenshot path.
+
+8. **Execution Delay**
+   - Waits for 3 seconds after each action to allow for UI updates or transitions.
+
+9. **Environment-Based Report Folder**
+   - Uses the `CURRENT_REPORT_FOLDER` environment variable to determine where to store logs and screenshots.
+
+10. **Extensible Architecture**
+    - Modular design with separate files for actions, reporting, and customization.
+    - Easy to add new Selenium or custom actions.
+
+11. **Excel Data Integration**
+    - (Implied from project structure) Likely supports reading test data from Excel files for data-driven testing.
+
+12. **HTML and Excel Reporting**
+    - (Implied from project structure) Generates HTML and Excel reports for test execution.
+
+13. **Logging and Debugging**
+    - Logs both to file and console for traceability and debugging.
+
+14. **Support for Multiple Datasets**
+    - Handles dataset numbers for data-driven test cases.
+
+15. **Field-Level Granularity**
+    - Tracks and logs actions at the field level for detailed reporting.
+
+---
+
+This file summarizes the main features and architectural highlights of the Selenium Python Keyword-Based Automation Framework as inferred from the code and project structure.

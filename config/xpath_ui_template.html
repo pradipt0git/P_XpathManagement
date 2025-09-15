@@ -1,0 +1,1396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>XPath UI</title>
+    <!-- Embedded tiny SVG favicon to avoid /favicon.ico 404s -->
+    <link rel="icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16'></svg>">
+    <style>
+        :root {
+            /* Base theme colors - colorblind friendly */
+            --bg-main: #1a1c2a;
+            --bg-secondary: #242736;
+            --bg-hover: #2f3242;
+            --bg-active: #3a3e52;
+            
+            /* Text colors with good contrast */
+            --text-primary: #e2e4f3;
+            --text-secondary: #a0a4c1;
+            
+            /* Accent colors - colorblind safe */
+            --accent-success: #00b894;  /* Teal - safe for all color vision types */
+            --accent-success-hover: #00d1a7;
+            --accent-primary: #4c6ef5;  /* Blue-violet - distinguishable */
+            --accent-primary-hover: #5c7cff;
+            --accent-secondary: #7950f2;  /* Purple - distinctive */
+            --accent-secondary-hover: #8c62ff;
+            
+            /* Structure colors */
+            --border-color: #3f435a;
+            --tree-line-color: #3f435a;
+            --input-bg: #2c2f40;
+            --tree-indent: 20px;
+            
+            /* Status colors - colorblind friendly */
+            --success-bg: rgba(0, 184, 148, 0.2);
+            --warning-bg: rgba(255, 171, 64, 0.2);
+            --error-bg: rgba(255, 107, 107, 0.2);
+        }
+        body {
+            background: var(--bg-main);
+            color: var(--text-primary);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            margin: 0;
+            padding: 20px;
+            line-height: 1.4;
+        }
+        h2 {
+            color: var(--text-primary);
+            margin: 0 0 20px 0;
+            font-weight: 400;
+            font-size: 1.5em;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+        #tree-root {
+            margin: 20px 0;
+            padding: 0;
+            background: var(--bg-secondary);
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+        }
+        ul {
+            list-style-type: none;
+            padding-left: 20px;
+            margin: 0;
+            position: relative;
+        }
+        li {
+            margin: 2px 0;
+            position: relative;
+            padding-left: 20px;
+        }
+        /* Tree node container */
+        .tree-node {
+            position: relative;
+            display: flex;
+            align-items: center;
+            min-height: 28px;
+        }
+        /* Button container */
+        .tree-controls {
+            position: absolute;
+            left: -20px;
+            top: 0;
+            bottom: 0;
+            width: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        /* Expand/collapse button */
+        .tree-btn {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            width: 20px;
+            height: 20px;
+            line-height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border-radius: 3px;
+            transition: all 0.2s ease;
+        }
+        
+        .tree-btn:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+            border-color: var(--accent-secondary);
+        }
+        
+        .tree-btn:active {
+            background: var(--bg-active);
+            color: var(--accent-primary);
+            border-color: var(--accent-primary);
+            transition: color 0.2s ease;
+            font-family: "Segoe UI", sans-serif;
+            font-size: 12px;
+            padding: 0;
+            margin: 0;
+        }
+        .tree-btn::before {
+            content: attr(data-icon);
+            display: inline-block;
+            transition: transform 0.3s ease;
+            color: var(--text-secondary);
+            font-weight: bold;
+        }
+        .tree-btn:hover::before {
+            color: var(--text-primary);
+        }
+        .open > .tree-node .tree-btn {
+            background: var(--accent-secondary);
+            color: var(--text-primary);
+            border-color: var(--accent-secondary);
+        }
+
+        .open > .tree-node .tree-btn::before {
+            transform: rotate(90deg);
+            color: var(--text-primary);
+        }
+
+        /* Override default button appearance */
+        .tree-btn:focus {
+            outline: 2px solid var(--accent-primary);
+            outline-offset: 1px;
+            color: var(--text-primary);
+        }
+
+        .tree-btn:focus:not(:focus-visible) {
+            outline: none;
+        }
+        .child-list {
+            max-height: 0;
+            overflow: hidden;
+            opacity: 0;
+            transition: all 0.3s ease-out;
+            transform: translateY(-10px);
+        }
+        li.open > .child-list {
+            max-height: 2000px;
+            opacity: 1;
+            overflow: visible;
+            transform: translateY(0);
+        }
+        /* Tree structure */
+        li:last-child > .tree-node > .tree-line-container > .tree-line-vertical {
+            display: none;
+        }
+        .element-details {
+            display: none;
+            margin: 0;
+            max-height: 0;
+            overflow: hidden;
+            background: var(--bg-main);
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+            padding: 0;
+            position: relative;
+            transform: translateY(-10px);
+            transition: all 0.3s ease-out;
+        }
+        .element-details::before {
+            content: "";
+            position: absolute;
+            left: -16px;
+            top: -8px;
+            bottom: 8px;
+            width: 2px;
+            background: var(--border-color);
+            opacity: 0;
+            transition: opacity 0.3s ease-out;
+        }
+        .element.open > .element-details {
+            transform: translateY(0);
+        }
+        .element.open > .element-details::before {
+            opacity: 1;
+        }
+        .element-name-input {
+            width: 220px;
+            background: var(--input-bg);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 8px 12px;
+            font-size: 13px;
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) inset;
+        }
+
+        .element-name-input:hover {
+            border-color: var(--accent-secondary);
+        }
+
+        .element-name-input:focus {
+            border-color: var(--accent-primary);
+            outline: none;
+            box-shadow: 0 0 0 2px var(--accent-primary-hover);
+        }
+
+        .element-name-input:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 1px var(--accent-primary);
+        }
+        /* Top Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .action-button {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 10px 16px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .action-button:not(:disabled):hover {
+            background: var(--bg-hover);
+            border-color: var(--accent-secondary);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .action-button:not(:disabled):active {
+            background: var(--bg-active);
+            transform: translateY(0);
+        }
+
+        .action-button:disabled {
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            border-color: var(--border-color);
+            opacity: 0.6;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .action-button.primary {
+            background: linear-gradient(90deg, var(--accent-primary) 0%, var(--accent-primary-hover) 100%);
+            color: #fff;
+            border-color: transparent;
+        }
+
+        .action-button.primary:not(:disabled):hover {
+            background: linear-gradient(90deg, var(--accent-primary-hover) 0%, var(--accent-primary) 100%);
+            box-shadow: 0 2px 12px rgba(76, 110, 245, 0.3);
+        }
+
+        .action-button.primary:disabled {
+            background: linear-gradient(90deg, var(--accent-primary) 0%, var(--accent-primary-hover) 100%);
+            opacity: 0.5;
+        }
+        /* Save button styles */
+        .save-btn {
+            background: transparent;
+            color: var(--text-secondary);
+            font-weight: bold;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+        .save-btn:not(:disabled) {
+            background: linear-gradient(90deg, var(--accent-success) 0%, var(--accent-success-hover) 100%);
+            color: #fff;
+            border-color: transparent;
+            box-shadow: 0 2px 8px rgba(0, 184, 148, 0.2);
+        }
+        .save-btn:not(:disabled):hover {
+            background: linear-gradient(90deg, var(--accent-success-hover) 0%, var(--accent-success) 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 184, 148, 0.3);
+        }
+        .save-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        /* Ensure buttons are clickable */
+        .tree-btn {
+            z-index: 2;
+            cursor: pointer;
+            position: relative;
+            border: none;
+            padding: 2px;
+            color: var(--text-secondary);
+            background: transparent;
+        }
+        .tree-btn:hover {
+            color: var(--accent-primary);
+            background: var(--bg-hover);
+            border-radius: 3px;
+        }
+
+        /* JSON Container Styles */
+        .json-container {
+            margin-top: 12px;
+            border-top: 1px solid var(--border-color);
+            padding-top: 12px;
+        }
+
+        .json-toggle {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 6px 12px;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin: 0;
+            transition: all 0.2s ease;
+            border-radius: 4px;
+        }
+
+        .json-toggle:hover {
+            color: var(--text-primary);
+            background: var(--bg-hover);
+            border-color: var(--accent-secondary);
+        }
+        
+        .json-container.expanded .json-toggle {
+            color: var(--text-primary);
+            background: var(--accent-secondary);
+            border-color: var(--accent-secondary);
+        }
+
+        .toggle-icon {
+            font-family: monospace;
+            font-size: 14px;
+            display: inline-block;
+            width: 12px;
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        .json-container.expanded .toggle-icon {
+            transform: rotate(180deg);
+        }
+
+        .json-content {
+            max-height: 0;
+            overflow-y: auto;
+            opacity: 0;
+            transition: all 0.3s ease-out;
+            margin-top: 8px;
+            background: var(--bg-main);
+            border-radius: 4px;
+        }
+
+        .json-container.expanded .json-content {
+            opacity: 1;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 8px;
+            max-height: 500px !important;
+        }
+
+        .json-content::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        .json-content::-webkit-scrollbar-track {
+            background: var(--bg-main);
+            border-radius: 4px;
+        }
+
+        .json-content::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 4px;
+        }
+
+        .json-content::-webkit-scrollbar-thumb:hover {
+            background: #666;
+        }
+
+        .json-content pre {
+            white-space: pre;
+            word-wrap: normal;
+            overflow-x: auto;
+        }
+
+        /* Delete button style */
+        .delete-btn {
+            background: var(--bg-secondary);
+            color: #ff4444;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 4px 10px;
+            cursor: pointer;
+            font-size: 15px;
+            transition: all 0.2s;
+        }
+
+        .delete-btn:hover {
+            background: var(--bg-hover);
+            border-color: #ff4444;
+            color: #ff6666;
+        }
+
+        /* Drag and drop styles */
+        .draggable {
+            cursor: move;
+        }
+
+        .dragging {
+            opacity: 0.7;
+            background: var(--bg-hover);
+            cursor: move;
+            position: relative;
+            z-index: 1000;
+        }
+
+        .tree-node {
+            position: relative;
+            transition: all 0.2s ease;
+            padding: 2px 0;
+        }
+
+        .tree-node.dragging {
+            transform: scale(1.02);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            background: var(--bg-active);
+        }
+
+        .drag-over-top::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: -2px;
+            height: 4px;
+            background: var(--accent-primary);
+            border-radius: 2px;
+            box-shadow: 0 0 8px var(--accent-primary);
+            pointer-events: none;
+            z-index: 1001;
+        }
+
+        .drag-over-bottom::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: -2px;
+            height: 4px;
+            background: var(--accent-primary);
+            border-radius: 2px;
+            box-shadow: 0 0 8px var(--accent-primary);
+            pointer-events: none;
+            z-index: 1001;
+        }
+
+        /* Drop target highlight */
+        .drop-target {
+            background: var(--bg-hover);
+            transition: background-color 0.2s ease;
+        }
+
+        /* Ghost element style during drag */
+        .drag-ghost {
+            opacity: 0.5;
+            background: var(--bg-active);
+            border: 2px dashed var(--accent-primary);
+            pointer-events: none;
+        }
+
+        .drag-handle {
+            cursor: move;
+            padding: 0 8px;
+            color: var(--text-secondary);
+            opacity: 0.5;
+            transition: opacity 0.2s;
+            display: inline-block;
+            vertical-align: middle;
+        }
+
+        .tree-node:hover .drag-handle {
+            opacity: 1;
+        }
+
+        /* Add to existing styles */
+        .validate-btn {
+            margin-left: 8px;
+            padding: 4px 8px;
+            background: var(--accent-primary);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .validate-btn:hover {
+            background: var(--accent-primary-hover);
+        }
+    </style>
+</head>
+<body>
+    <h2>XPath UI Tree View</h2>
+    <div class="action-buttons">
+        <button id="capture-xpath-btn" class="action-button primary">
+            <span>📷</span>
+            <span>Capture XPath</span>
+        </button>
+        <button id="stop-capture-btn" class="action-button" disabled>
+            <span>⏹️</span>
+            <span>Stop Capture</span>
+        </button>
+        <button id="refresh-btn" class="action-button">
+            <span>↻</span>
+            <span>Refresh</span>
+        </button>
+    </div>
+    <div id="tree-root"></div>
+    <script>
+    // Add state tracking
+let treeState = new Map(); // Store expanded state of nodes
+
+// Add function to save tree state
+function saveTreeState() {
+    treeState.clear();
+    document.querySelectorAll('.json-file').forEach(file => {
+        const fileName = file.querySelector('.item-container').dataset.filename;
+        const isExpanded = file.classList.contains('open');
+        const elements = {};
+        
+        // Save element states within this file
+        file.querySelectorAll('.element').forEach(el => {
+            const index = el.querySelector('.tree-node').dataset.index;
+            elements[index] = el.classList.contains('open');
+        });
+        
+        treeState.set(fileName, {
+            isExpanded,
+            elements
+        });
+    });
+}
+
+// Add function to restore tree state
+function restoreTreeState() {
+    treeState.forEach((state, fileName) => {
+        const fileNode = document.querySelector(`.item-container[data-filename="${fileName}"]`)?.closest('.json-file');
+        if (fileNode) {
+            if (state.isExpanded) {
+                fileNode.classList.add('open');
+            }
+            
+            // Restore element states
+            Object.entries(state.elements).forEach(([index, isOpen]) => {
+                const element = fileNode.querySelector(`.tree-node[data-index="${index}"]`)?.closest('.element');
+                if (element && isOpen) {
+                    element.classList.add('open');
+                    const detailsDiv = element.querySelector('.element-details');
+                    if (detailsDiv) {
+                        detailsDiv.style.display = 'block';
+                        detailsDiv.style.maxHeight = detailsDiv.scrollHeight + 'px';
+                        detailsDiv.style.opacity = '1';
+                        detailsDiv.style.padding = '12px';
+                        detailsDiv.style.margin = '8px 0 8px 12px';
+                    }
+                }
+            });
+        }
+    });
+}
+
+// Update the refresh button click handler
+document.getElementById('refresh-btn').onclick = async function() {
+    saveTreeState();  // Save current state
+    await renderTree();
+    setTimeout(restoreTreeState, 100);  // Restore state after tree renders
+};
+
+    document.addEventListener('DOMContentLoaded', function() {
+        let captureProcessRunning = false;
+        
+        // Update capture button click handler
+        document.getElementById('capture-xpath-btn').onclick = async function() {
+            this.disabled = true;
+            document.getElementById('stop-capture-btn').disabled = false;
+            this.textContent = 'Capturing...';
+            captureProcessRunning = true;
+            
+            try {
+                const resp = await fetch('/api/capture_xpath', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ browser: 'chrome' })
+                });
+                const result = await resp.json();
+                
+                if (!result.success) {
+                    throw new Error(result.error || 'Unknown error');
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+                this.disabled = false;
+                document.getElementById('stop-capture-btn').disabled = true;
+                this.innerHTML = '<span>📷</span><span>Capture XPath</span>';
+                captureProcessRunning = false;
+            }
+        };
+
+        // Update stop capture button click handler
+        document.getElementById('stop-capture-btn').onclick = async function() {
+            this.disabled = true;
+            try {
+                const resp = await fetch('/api/stop_capture', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                // Check if response is JSON
+                const contentType = resp.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    throw new Error('Server returned non-JSON response');
+                }
+                
+                const result = await resp.json();
+                if (!result.success) {
+                    throw new Error(result.error || 'Unknown error');
+                }
+                
+                document.getElementById('capture-xpath-btn').disabled = false;
+                document.getElementById('capture-xpath-btn').innerHTML = '<span>📷</span><span>Capture XPath</span>';
+                captureProcessRunning = false;
+                await renderTree();
+            } catch (error) {
+                console.error('Stop capture error:', error);
+                this.disabled = false;
+                alert('Error stopping capture: ' + error.message);
+            }
+        };
+
+        // Provide safe no-op/default implementations if missing
+        try {
+            if (typeof enableCaptureMode !== 'function') {
+                window.enableCaptureMode = function() {
+                    const btn = document.getElementById('capture-xpath-btn');
+                    if (btn) btn.disabled = false; // enabling capture UI (default)
+                };
+            }
+            if (typeof disableCaptureMode !== 'function') {
+                window.disableCaptureMode = function() {
+                    const btn = document.getElementById('capture-xpath-btn');
+                    if (btn) btn.disabled = false; // default: keep enabled
+                };
+            }
+        } catch (e) {
+            console.error('Error installing capture mode helpers:', e);
+        }
+
+        // Initialize button states
+        try { disableCaptureMode(); } catch (e) { console.warn('disableCaptureMode call failed', e); }
+    });
+        let captureProcessRunning = false;
+        let dragSource = null;
+        let dragType = null;
+
+        // Drag and drop functionality
+        document.addEventListener('dragstart', function(e) {
+            const treeNode = e.target.closest('.tree-node');
+            if (!treeNode || !treeNode.draggable) return;
+            
+            dragSource = treeNode;
+            dragType = treeNode.dataset.type;
+            treeNode.classList.add('dragging');
+            
+            // Create a semi-transparent clone for drag image
+            const dragGhost = treeNode.cloneNode(true);
+            dragGhost.classList.add('drag-ghost');
+            dragGhost.style.position = 'absolute';
+            dragGhost.style.top = '-1000px';
+            document.body.appendChild(dragGhost);
+            
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setDragImage(dragGhost, 20, 20);
+            
+            // Remove the ghost element after drag starts
+            requestAnimationFrame(() => {
+                document.body.removeChild(dragGhost);
+            });
+
+            // Add visual feedback for potential drop targets
+            const dropTargets = document.querySelectorAll(`.tree-node[data-type="${dragType}"]`);
+            dropTargets.forEach(target => {
+                if (target !== treeNode) {
+                    target.classList.add('drop-target');
+                }
+            });
+        });
+
+        document.addEventListener('dragend', function(e) {
+            if (dragSource) {
+                dragSource.classList.remove('dragging');
+                // Remove all visual feedback classes
+                document.querySelectorAll('.drop-target').forEach(el => el.classList.remove('drop-target'));
+                document.querySelectorAll('.drag-over-top').forEach(el => el.classList.remove('drag-over-top'));
+                document.querySelectorAll('.drag-over-bottom').forEach(el => el.classList.remove('drag-over-bottom'));
+                dragSource = null;
+                dragType = null;
+            }
+        });
+
+        document.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            const treeNode = e.target.closest('.tree-node');
+            if (!treeNode || !dragSource || treeNode === dragSource) return;
+
+            // Make sure we're dragging and dropping items of the same type
+            if (treeNode.dataset.type !== dragType) return;
+
+            // Remove existing drop indicators
+            document.querySelectorAll('.drag-over-top, .drag-over-bottom').forEach(el => {
+                el.classList.remove('drag-over-top', 'drag-over-bottom');
+            });
+
+            // For JSON files, they can be reordered freely
+            if (dragType === 'json-file') {
+                const rect = treeNode.getBoundingClientRect();
+                const midY = rect.top + rect.height / 2;
+                
+                if (e.clientY < midY) {
+                    treeNode.classList.add('drag-over-top');
+                } else {
+                    treeNode.classList.add('drag-over-bottom');
+                }
+            }
+            // For elements within a JSON file, they can only be reordered within the same file
+            else if (dragType === 'element') {
+                if (treeNode.dataset.page !== dragSource.dataset.page) return;
+                
+                const rect = treeNode.getBoundingClientRect();
+                const midY = rect.top + rect.height / 2;
+                
+                if (e.clientY < midY) {
+                    treeNode.classList.add('drag-over-top');
+                } else {
+                    treeNode.classList.add('drag-over-bottom');
+                }
+            }
+
+            // Set the drop effect
+            e.dataTransfer.dropEffect = 'move';
+        });
+
+        document.addEventListener('dragleave', function(e) {
+            const itemContainer = e.target.closest('.item-container');
+            if (itemContainer) {
+                itemContainer.classList.remove('drag-over-top', 'drag-over-bottom');
+            }
+        });
+
+        document.addEventListener('drop', async function(e) {
+            e.preventDefault();
+            const dropTarget = e.target.closest('.tree-node');
+            if (!dropTarget || !dragSource || dropTarget === dragSource) return;
+
+            // Make sure we're dropping items of the same type
+            if (dropTarget.dataset.type !== dragType) return;
+
+            if (dragType === 'json-file') {
+                // Get the list of JSON files and their current order
+                const fileList = Array.from(document.querySelectorAll('.json-file .item-container[data-type="json-file"]'));
+                const oldIndex = fileList.indexOf(dragSource);
+                const newIndex = fileList.indexOf(dropTarget);
+                
+                if (oldIndex !== -1 && newIndex !== -1) {
+                    // Update UI immediately
+                    const sourceItem = dragSource.closest('li.json-file');
+                    const targetItem = dropTarget.closest('li.json-file');
+                    
+                    // Move the element in the DOM
+                    if (dropBelow) {
+                        targetItem.after(sourceItem);
+                    } else {
+                        targetItem.before(sourceItem);
+                    }
+                    
+                    // Update indices
+                    const allFiles = Array.from(document.querySelectorAll('.json-file'));
+                    allFiles.forEach((file, idx) => {
+                        const node = file.querySelector('.tree-node');
+                        if (node) node.dataset.index = idx;
+                    });
+
+                    // Send reorder request to server in background
+                    fetch('/api/reorder_files', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            oldIndex: oldIndex,
+                            newIndex: newIndex
+                        })
+                    }).then(resp => resp.json())
+                      .then(result => {
+                          if (!result.success) {
+                              alert('Error saving reorder: ' + (result.error || 'Unknown error'));
+                              // Revert the change if server update fails
+                              if (oldIndex < newIndex) {
+                                  allFiles[oldIndex].before(sourceItem);
+                              } else {
+                                  allFiles[oldIndex].after(sourceItem);
+                              }
+                              // Restore original indices
+                              allFiles.forEach((file, idx) => {
+                                  const node = file.querySelector('.tree-node');
+                                  if (node) node.dataset.index = idx;
+                              });
+                          }
+                      });
+                }
+            } else if (dragType === 'element') {
+                if (dropTarget.dataset.page !== dragSource.dataset.page) return;
+
+                const oldIndex = parseInt(dragSource.dataset.index);
+                let newIndex = parseInt(dropTarget.dataset.index);
+                
+                // Store the expanded state of the parent JSON file
+                const parentJsonFile = dragSource.closest('li.json-file');
+                const wasExpanded = parentJsonFile.classList.contains('open');                // Adjust the newIndex based on whether we're dropping above or below
+                const rect = dropTarget.getBoundingClientRect();
+                const midY = rect.top + rect.height / 2;
+                if (e.clientY > midY && newIndex > oldIndex) {
+                    newIndex++;
+                } else if (e.clientY < midY && newIndex < oldIndex) {
+                    newIndex--;
+                }
+
+                // Get the source and target elements
+                const sourceItem = dragSource.closest('li.element');
+                const targetItem = dropTarget.closest('li.element');
+                const elementsList = sourceItem.parentNode;
+                
+                // Calculate target position
+                const dropPosition = e.clientY > midY ? 'after' : 'before';
+                
+                // First update the UI immediately
+                if (dropPosition === 'after') {
+                    targetItem.after(sourceItem);
+                } else {
+                    targetItem.before(sourceItem);
+                }
+
+                // Re-calculate final indices after DOM update
+                const elements = Array.from(elementsList.children);
+                const finalNewIndex = elements.indexOf(sourceItem);
+
+                // Update all indices to match new positions
+                elements.forEach((el, idx) => {
+                    const node = el.querySelector('.tree-node');
+                    if (node) {
+                        node.dataset.index = idx;
+                    }
+                });
+
+                // Now send the update to the server
+                fetch('/api/reorder', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        page: dragSource.dataset.page,
+                        oldIndex: oldIndex,
+                        newIndex: finalNewIndex
+                    })
+                }).then(resp => resp.json())
+                  .then(result => {
+                      if (!result.success) {
+                          alert('Error saving reorder: ' + (result.error || 'Unknown error'));
+                          // Revert the change if server update fails
+                          elements[oldIndex].parentNode.insertBefore(sourceItem, elements[oldIndex]);
+                          
+                          // Restore original indices
+                          elements.forEach((el, idx) => {
+                              const node = el.querySelector('.tree-node');
+                              if (node) node.dataset.index = idx;
+                          });
+                      }
+                  });
+
+                // Ensure parent JSON file stays expanded and child list is visible
+                if (wasExpanded) {
+                    parentJsonFile.classList.add('open');
+                    const childList = parentJsonFile.querySelector('.child-list');
+                    if (childList) {
+                        childList.style.display = 'block';
+                        childList.style.maxHeight = 'none';
+                        childList.style.opacity = '1';
+                        childList.style.overflow = 'visible';
+                        childList.style.transform = 'translateY(0)';
+                        // Force a reflow to ensure the child list is visible
+                        void childList.offsetHeight;
+                    }
+                }
+            }
+        });
+        document.getElementById('capture-xpath-btn').onclick = async function() {
+            this.disabled = true;
+            document.getElementById('stop-capture-btn').disabled = false;
+            this.textContent = 'Capturing...';
+            captureProcessRunning = true;
+            const resp = await fetch('/api/capture_xpath', { method: 'POST' });
+            const result = await resp.json();
+            alert(result.success ? 'Capture complete!' : ('Error: ' + (result.error || 'Unknown error')));
+            this.disabled = false;
+            document.getElementById('stop-capture-btn').disabled = true;
+            this.textContent = 'Capture XPath';
+            captureProcessRunning = false;
+            await renderTree();
+        };
+        document.getElementById('stop-capture-btn').onclick = async function() {
+            this.disabled = true;
+            try {
+                const resp = await fetch('/api/stop_capture', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                // Check if response is JSON
+                const contentType = resp.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    throw new Error('Server returned non-JSON response');
+                }
+                
+                const result = await resp.json();
+                if (!result.success) {
+                    throw new Error(result.error || 'Unknown error');
+                }
+                
+                document.getElementById('capture-xpath-btn').disabled = false;
+                document.getElementById('capture-xpath-btn').textContent = 'Capture XPath';
+                captureProcessRunning = false;
+                await renderTree();
+            } catch (error) {
+                console.error('Stop capture error:', error);
+                this.disabled = false;
+                alert('Error stopping capture: ' + error.message);
+            }
+        };
+        document.getElementById('stop-capture-btn').disabled = true;
+        document.getElementById('refresh-btn').onclick = async function() {
+            await renderTree();
+        };
+        async function fetchData() {
+            const resp = await fetch('/api/data');
+            return await resp.json();
+        }
+        function createElementTree(page, elements, pageIdx) {
+            const pageLi = document.createElement('li');
+            pageLi.className = 'json-file';
+            
+            const treeNode = document.createElement('div');
+            treeNode.className = 'tree-node';
+            
+            // Controls container (for button)
+            const treeControls = document.createElement('div');
+            treeControls.className = 'tree-controls';
+            treeNode.appendChild(treeControls);
+            
+            const itemContainer = document.createElement('div');
+            itemContainer.className = 'item-container';
+            itemContainer.draggable = true;
+            itemContainer.dataset.type = 'json-file';
+            itemContainer.dataset.filename = page;
+            
+            // Add drag handle for JSON file
+            const dragHandle = document.createElement('span');
+            dragHandle.className = 'drag-handle';
+            dragHandle.textContent = '⋮⋮';
+            dragHandle.title = 'Drag to reorder';
+            itemContainer.appendChild(dragHandle);
+            
+            // Page collapse/expand button
+            const pageCollapseBtn = document.createElement('button');
+            pageCollapseBtn.setAttribute('data-icon', '›');  // Using unicode arrow
+            pageCollapseBtn.title = 'Expand/Collapse';
+            pageCollapseBtn.className = 'tree-btn';
+            
+            pageCollapseBtn.onclick = () => {
+                pageLi.classList.toggle('open');
+                pageCollapseBtn.setAttribute('data-icon', '›');  // Keep the same icon, rotation will handle state
+            };
+            
+            // File name input (without extension)
+            const fileName = page.replace(/\.json$/, '');
+            const fileNameInput = document.createElement('input');
+            fileNameInput.type = 'text';
+            fileNameInput.value = fileName;
+            fileNameInput.className = 'element-name-input';
+            fileNameInput.style.fontWeight = 'bold';
+            fileNameInput.style.width = '250px';
+            
+            // Save icon
+            const saveBtn = document.createElement('button');
+            saveBtn.innerHTML = '✓';
+            saveBtn.title = 'Save (rename file)';
+            saveBtn.className = 'save-btn';
+            saveBtn.disabled = true;
+            fileNameInput.addEventListener('input', function() {
+                if (fileNameInput.value.trim() !== fileName) {
+                    saveBtn.disabled = false;
+                    saveBtn.style.background = 'linear-gradient(90deg, #2d7cff 60%, #4e9cff 100%)';
+                    saveBtn.style.color = '#fff';
+                } else {
+                    saveBtn.disabled = true;
+                    saveBtn.style.background = '';
+                    saveBtn.style.color = '';
+                }
+            });
+            saveBtn.onclick = async () => {
+                const newName = fileNameInput.value.trim();
+                if (!newName || newName === fileName) return;
+                const resp = await fetch('/api/rename_json', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ old: page, new: newName + '.json' })
+                });
+                const result = await resp.json();
+                if (result.success) {
+                    alert('File renamed!');
+                    await renderTree();
+                } else {
+                    alert('Rename failed: ' + (result.error || 'Unknown error'));
+                }
+            };
+            
+            // Delete icon
+            const deleteBtn = document.createElement('button');
+            deleteBtn.innerHTML = 'X';
+            deleteBtn.title = 'Delete this file';
+            deleteBtn.className = 'delete-btn';
+            deleteBtn.style.marginLeft = '8px';
+            deleteBtn.onclick = async () => {
+                if (!confirm('Are you sure you want to delete this file? This action cannot be undone.')) return;
+                try {
+                    const resp = await fetch('/api/delete_json', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ file: page })
+                    });
+                    if (!resp.ok) {
+                        const txt = await resp.text();
+                        throw new Error(`HTTP ${resp.status}: ${txt}`);
+                    }
+                    const ct = resp.headers.get('content-type') || '';
+                    if (!ct.includes('application/json')) {
+                        const txt = await resp.text();
+                        throw new Error('Expected JSON response, got: ' + txt);
+                    }
+                    const result = await resp.json();
+                    if (result.success) {
+                        alert('File deleted!');
+                        await renderTree();
+                    } else {
+                        alert('Delete failed: ' + (result.error || 'Unknown error'));
+                    }
+                } catch (err) {
+                    console.error('Delete failed:', err);
+                    alert('Delete failed: ' + err.message);
+                }
+            };
+            
+            // Validate button (hidden)
+            const validateBtn = document.createElement('button');
+            validateBtn.className = 'validate-btn';
+            validateBtn.textContent = 'Validate XPaths';
+            validateBtn.style.display = 'none';
+            // validateBtn.onclick = ... (kept for future use)
+            
+            treeControls.appendChild(pageCollapseBtn);
+            itemContainer.appendChild(fileNameInput);
+            itemContainer.appendChild(saveBtn);
+            itemContainer.appendChild(deleteBtn);
+            itemContainer.appendChild(validateBtn);
+            treeNode.appendChild(itemContainer);
+            pageLi.appendChild(treeNode);
+            const ul = document.createElement('ul');
+            ul.classList.add('child-list');
+            
+            elements.forEach((el, elIdx) => {
+                const elLi = document.createElement('li');
+                elLi.className = 'element';
+                
+                const treeNode = document.createElement('div');
+                treeNode.className = 'tree-node';
+                treeNode.draggable = true;
+                treeNode.dataset.type = 'element';
+                treeNode.dataset.page = page;
+                treeNode.dataset.index = elIdx;
+                
+                // Controls container (for button)
+                const treeControls = document.createElement('div');
+                treeControls.className = 'tree-controls';
+                treeNode.appendChild(treeControls);
+                
+                const itemContainer = document.createElement('div');
+                itemContainer.className = 'item-container';
+                
+                // Add drag handle for element
+                const dragHandle = document.createElement('span');
+                dragHandle.className = 'drag-handle';
+                dragHandle.textContent = '⋮⋮';
+                dragHandle.title = 'Drag to reorder';
+                // Make the drag handle trigger dragging of the parent tree-node
+                dragHandle.addEventListener('mousedown', function(e) {
+                    const treeNode = e.target.closest('.tree-node');
+                    if (treeNode) {
+                        treeNode.draggable = true;
+                        treeNode.addEventListener('dragend', function() {
+                            treeNode.draggable = false;
+                        }, { once: true });
+                    }
+                });
+                itemContainer.appendChild(dragHandle);
+                
+                // Expand/collapse button
+                const expandBtn = document.createElement('button');
+                expandBtn.setAttribute('data-icon', '›');  // Using unicode arrow
+                expandBtn.className = 'tree-btn';
+                expandBtn.title = 'Expand/Collapse';
+                expandBtn.addEventListener('click', function(e) {
+                    console.log('Click detected on element button');
+                    e.stopPropagation(); // Prevent event bubbling
+                    elLi.classList.toggle('open');
+                    expandBtn.setAttribute('data-icon', '›');  // Keep the same icon, rotation will handle state
+                    
+                    // Remove previous transition end listener if exists
+                    detailsDiv.removeEventListener('transitionend', detailsDiv._transitionEndHandler);
+                    
+                    if (elLi.classList.contains('open')) {
+                        console.log('Opening element details');
+                        // Set initial height to trigger animation
+                        detailsDiv.style.display = 'block';
+                        setTimeout(() => {
+                            detailsDiv.style.padding = '12px';
+                            detailsDiv.style.margin = '8px 0 8px 12px';
+                            const height = detailsDiv.scrollHeight;
+                            console.log('Content height:', height);
+                            detailsDiv.style.maxHeight = height + 'px';
+                            detailsDiv.style.opacity = '1';
+                        }, 10);
+                    } else {
+                        console.log('Closing element details');
+                        detailsDiv.style.maxHeight = '0';
+                        detailsDiv.style.padding = '0';
+                        detailsDiv.style.margin = '0';
+                        detailsDiv.style.opacity = '0';
+                        
+                        // Add transition end listener
+                        detailsDiv._transitionEndHandler = function() {
+                            if (!elLi.classList.contains('open')) {
+                                detailsDiv.style.display = 'none';
+                            }
+                        };
+                        detailsDiv.addEventListener('transitionend', detailsDiv._transitionEndHandler);
+                    }
+                });
+                
+                // Name input and save button
+                const nameInput = document.createElement('input');
+                nameInput.type = 'text';
+                nameInput.value = el.name || '';
+                nameInput.className = 'element-name-input';
+                
+                const saveNameBtn = document.createElement('button');
+                saveNameBtn.innerHTML = '✓';
+                saveNameBtn.title = 'Save Name';
+                saveNameBtn.className = 'save-btn';
+                saveNameBtn.disabled = true;
+                nameInput.addEventListener('input', function() {
+                    if (nameInput.value !== (el.name || '')) {
+                        saveNameBtn.disabled = false;
+                        saveNameBtn.style.background = 'linear-gradient(90deg, #2d7cff 60%, #4e9cff 100%)';
+                        saveNameBtn.style.color = '#fff';
+                    } else {
+                        saveNameBtn.disabled = true;
+                        saveNameBtn.style.background = '';
+                        saveNameBtn.style.color = '';
+                    }
+                });
+                saveNameBtn.onclick = async () => {
+                    const newName = nameInput.value;
+                    const resp = await fetch('/api/update_name', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ page, index: elIdx, name: newName })
+                    });
+                    const result = await resp.json();
+                    if (result.success) {
+                        alert('Name updated!');
+                        saveNameBtn.disabled = true;
+                        saveNameBtn.style.background = '';
+                        saveNameBtn.style.color = '';
+                    } else {
+                        alert('Update failed: ' + (result.error || 'Unknown error'));
+                    }
+                };
+                
+                // Delete field (object) button for 2nd layer
+                const deleteFieldBtn = document.createElement('button');
+                deleteFieldBtn.innerHTML = 'X';
+                deleteFieldBtn.title = 'Delete this field/object';
+                deleteFieldBtn.className = 'delete-btn';
+                deleteFieldBtn.style.marginLeft = '8px';
+                deleteFieldBtn.onclick = async () => {
+                    if (!confirm('Are you sure you want to delete this field/object? This action cannot be undone.')) return;
+                    const resp = await fetch('/api/delete_field', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ page, index: elIdx })
+                    });
+                    const result = await resp.json();
+                    if (result.success) {
+                        alert('Field deleted!');
+                        await renderTree();
+                    } else {
+                        alert('Delete failed: ' + (result.error || 'Unknown error'));
+                    }
+                };
+                treeControls.appendChild(expandBtn);
+                itemContainer.appendChild(nameInput);
+                itemContainer.appendChild(saveNameBtn);
+                itemContainer.appendChild(deleteFieldBtn);
+                treeNode.appendChild(itemContainer);
+                elLi.appendChild(treeNode);
+                
+                // Details (collapsible JSON)
+                const detailsDiv = document.createElement('div');
+                detailsDiv.className = 'element-details';
+
+                const detailsContent = document.createElement('div');
+                detailsContent.className = 'details-content';
+                detailsDiv.appendChild(detailsContent);
+
+                // Xpath textbox and save button
+                const xpathBox = document.createElement('input');
+                xpathBox.type = 'text';
+                xpathBox.value = (el.selectors && el.selectors.xpath) ? el.selectors.xpath : '';
+                xpathBox.className = 'element-name-input';
+                xpathBox.style.marginBottom = '4px';
+                xpathBox.style.width = '70%';
+
+                const saveXpathBtn = document.createElement('button');
+                saveXpathBtn.innerHTML = '✓';
+                saveXpathBtn.title = 'Save XPath';
+                saveXpathBtn.className = 'save-btn';
+                saveXpathBtn.disabled = true;
+                xpathBox.addEventListener('input', function() {
+                    if (xpathBox.value !== ((el.selectors && el.selectors.xpath) ? el.selectors.xpath : '')) {
+                        saveXpathBtn.disabled = false;
+                        saveXpathBtn.style.background = 'linear-gradient(90deg, #2d7cff 60%, #4e9cff 100%)';
+                        saveXpathBtn.style.color = '#fff';
+                    } else {
+                        saveXpathBtn.disabled = true;
+                        saveXpathBtn.style.background = '';
+                        saveXpathBtn.style.color = '';
+                    }
+                });
+                saveXpathBtn.onclick = async () => {
+                    const newXpath = xpathBox.value;
+                    const resp = await fetch('/api/update_xpath', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ page, index: elIdx, xpath: newXpath })
+                    });
+                    const result = await resp.json();
+                    if (result.success) {
+                        alert('XPath updated!');
+                        saveXpathBtn.disabled = true;
+                        saveXpathBtn.style.background = '';
+                        saveXpathBtn.style.color = '';
+                    } else {
+                        alert('Update failed: ' + (result.error || 'Unknown error'));
+                    }
+                };
+                
+                // Use custom collapsible for JSON display
+                const jsonContainer = document.createElement('div');
+                jsonContainer.className = 'json-container';
+                
+                const jsonToggle = document.createElement('button');
+                jsonToggle.className = 'json-toggle';
+                jsonToggle.innerHTML = '<span class="toggle-icon">+</span> Show JSON';
+                
+                const jsonContent = document.createElement('div');
+                jsonContent.className = 'json-content';
+                
+                // Pretty JSON with syntax highlighting
+                const pre = document.createElement('pre');
+                pre.style.margin = '0';
+                pre.style.fontSize = '13px';
+                // Set initial JSON
+                pre.textContent = JSON.stringify(el, null, 2);
+
+                jsonToggle.addEventListener('click', function() {
+                    const isExpanded = jsonContainer.classList.toggle('expanded');
+                    this.querySelector('.toggle-icon').textContent = isExpanded ? '−' : '+';
+
+                    if (isExpanded) {
+                        // Update JSON with latest values from inputs
+                        const latest = JSON.parse(JSON.stringify(el));
+                        // Update name if changed
+                        if (nameInput && nameInput.value !== undefined) latest.name = nameInput.value;
+                        // Update xpath if changed
+                        if (xpathBox && xpathBox.value !== undefined) {
+                            if (!latest.selectors) latest.selectors = {};
+                            latest.selectors.xpath = xpathBox.value;
+                        }
+                        pre.textContent = JSON.stringify(latest, null, 2);
+
+                        jsonContent.style.maxHeight = '500px';
+                        jsonContent.style.opacity = '1';
+                        setTimeout(() => {
+                            const baseHeight = detailsDiv.querySelector('.details-content').offsetHeight;
+                            const totalHeight = baseHeight + 500 + 32;
+                            detailsDiv.style.maxHeight = totalHeight + 'px';
+                        }, 0);
+                    } else {
+                        jsonContent.style.maxHeight = '0';
+                        jsonContent.style.opacity = '0';
+                        setTimeout(() => {
+                            const baseHeight = detailsDiv.querySelector('.details-content').offsetHeight;
+                            detailsDiv.style.maxHeight = (baseHeight + 32) + 'px';
+                        }, 300);
+                    }
+                });
+
+                jsonContent.appendChild(pre);
+                jsonContainer.appendChild(jsonToggle);
+                jsonContainer.appendChild(jsonContent);
+                
+                detailsContent.appendChild(xpathBox);
+                detailsContent.appendChild(saveXpathBtn);
+                detailsContent.appendChild(jsonContainer);
+                elLi.appendChild(detailsDiv);
+                
+                ul.appendChild(elLi);
+            });
+            pageLi.appendChild(ul);
+            return pageLi;
+        }
+        async function renderTree() {
+            const data = await fetchData();
+            const root = document.getElementById('tree-root');
+            root.innerHTML = '';
+            const ul = document.createElement('ul');
+            Object.entries(data).forEach(([page, elements], pageIdx) => {
+                ul.appendChild(createElementTree(page, elements, pageIdx));
+            });
+            root.appendChild(ul);
+        }
+        renderTree();
+    </script>
+</body>
+</html>
+</html>
