@@ -310,5 +310,109 @@
     "page_url": "https://www.google.com/?zx=1757960390564&no_sw_cr=1",
     "page_title": "Google",
     "page_name": "Google"
+  },
+  {
+    "name": "Images",
+    "properties": {
+      "ariaLabel": "Search for Images ",
+      "className": "gb_X",
+      "href": "https://www.google.com/imghp?hl=en&ogbl",
+      "id": "",
+      "name": "",
+      "role": null,
+      "tag": "A",
+      "text": "Images",
+      "title": "",
+      "type": "",
+      "value": null,
+      "rect": {
+        "bottom": 40,
+        "height": 24,
+        "left": 827.3624877929688,
+        "right": 869.9999885559082,
+        "top": 16,
+        "width": 42.63750076293945,
+        "x": 827.3624877929688,
+        "y": 16
+      },
+      "x": 848.6812381744385,
+      "y": 28.0
+    },
+    "selectors": {
+      "Class Name": "gb_X",
+      "CSS Selector (Class)": ".gb_X",
+      "XPath (Class)": "//*[contains(@class, 'gb_X')]",
+      "CSS Selector (Combined)": "a.gb_X",
+      "XPath (Combined)": "//a[contains(@class, 'gb_X')]",
+      "Tag": "a",
+      "Full XPath": "/html[1]/body[1]/div[2]/div[2]/div[1]/div[1]/header[1]/div[1]/div[2]/a[1]",
+      "Relative XPath": "//*[@id='gb']/div[1]/div[2]/a",
+      "accu_xpath": "//div[2]/div[2]/div/div/header/div[1]/div[2]/a",
+      "visible_property_xpath": "//a[translate(normalize-space(text()), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')='images']",
+      "xpath": "//a[translate(normalize-space(text()), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')='images']"
+    },
+    "found_element_counts": {
+      "CSS Selector (Class)": 2,
+      "CSS Selector (Combined)": 2,
+      "Full XPath": 1,
+      "Relative XPath": 1,
+      "accu_xpath": 1,
+      "visible_property_xpath": 1
+    },
+    "page_url": "https://www.google.com/?zx=1757961949114&no_sw_cr=1",
+    "page_title": "Google",
+    "page_name": "Google"
+  },
+  {
+    "name": "How Search works",
+    "properties": {
+      "ariaLabel": null,
+      "className": "pHiOh",
+      "href": "https://google.com/search/howsearchworks/?fg=1",
+      "id": "",
+      "name": "",
+      "role": null,
+      "tag": "A",
+      "text": "How Search works",
+      "title": "",
+      "type": "",
+      "value": null,
+      "rect": {
+        "bottom": 704.0000114440918,
+        "height": 46.79999923706055,
+        "left": 349.6125183105469,
+        "right": 496.3250274658203,
+        "top": 657.2000122070312,
+        "width": 146.71250915527344,
+        "x": 349.6125183105469,
+        "y": 657.2000122070312
+      },
+      "x": 422.9687728881836,
+      "y": 680.6000118255615
+    },
+    "selectors": {
+      "Class Name": "pHiOh",
+      "CSS Selector (Class)": ".pHiOh",
+      "XPath (Class)": "//*[contains(@class, 'pHiOh')]",
+      "CSS Selector (Combined)": "a.pHiOh",
+      "XPath (Combined)": "//a[contains(@class, 'pHiOh')]",
+      "Tag": "a",
+      "Full XPath": "/html[1]/body[1]/div[2]/div[7]/div[1]/div[2]/div[1]/a[3]",
+      "Relative XPath": "/html/body/div[2]/div[7]/div/div[2]/div[1]/a[3]",
+      "accu_xpath": "//div[2]/div[7]/div/div[2]/div[1]/a[3]",
+      "visible_property_xpath": "//a[translate(normalize-space(text()), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')='how search works']",
+      "xpath": "//a[translate(normalize-space(text()), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')='how search works']"
+    },
+    "found_element_counts": {
+      "CSS Selector (Class)": 6,
+      "CSS Selector (Combined)": 5,
+      "Full XPath": 1,
+      "Relative XPath": 1,
+      "accu_xpath": 1,
+      "visible_property_xpath": 1
+    },
+    "page_url": "https://www.google.com/?zx=1757961949114&no_sw_cr=1",
+    "page_title": "Google",
+    "page_name": "Google"
   }
 ]
